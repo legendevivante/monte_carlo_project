@@ -1,0 +1,102 @@
+#Question 3
+rm(list=ls())
+#pdf of f
+f <- function(a, mu_1, mu_2, s_1, s_2, x) {
+  return ((1/1-a)*(dnorm(x, mu_1, s_1) -a*dnorm(x, mu_2, s_2)))
+}
+
+#We will plot the pdf of f for different values of a
+mu_1 <- 0
+mu_2 <- 0
+s_1 <-2 
+s_2 <-1
+
+#We computed a^*, we get:
+a_star<- (s_2/s_1)*exp(((mu_1-mu_2)^2)/(2*(s_1^2-s_2^2)))
+
+
+#plot of f for different values of a
+#The dotted curve corresponds to a=a_star
+a_values <- seq(0.1, a_star, length.out = 10)
+colors_a <- rainbow(length(a_values))
+x <- seq(-10, 10, length.out = 1000)
+
+plot(x, f(a_values[1], mu_1, mu_2, 3, s_2, x), type = "l", col = colors_a[1], xlab = "x", ylab = "f(x)", main = "Plot of f for different values of a")
+
+for (i in 2:length(a_values)) {
+  if(a_values[i]==a_star){
+    lines(x, f(a_values[i], mu_1, mu_2, 3, s_2, x), col = colors_a[i], lty = 2)  
+  }
+  else{
+    lines(x, f(a_values[i], mu_1, mu_2, 3, s_2, x), col = colors_a[i])
+  }
+}
+legend("topright", legend = paste("a =", round(a_values, 2)), col = colors_a, lty = 1)
+
+#plot of f for different values of s_2
+s_2_values <- seq(1, s_1, length.out = 10)
+s_2_values<-s_2_values[1:length(s_2_values)-1] #We remove the last value because it is equal to s_1 and we need s_1>s_2
+colors_s1 <- rainbow(length(s_2_values))
+
+plot(x, f(0.2, mu_1, mu_2, s_2_values[1], s_2, x), type = "l", col = colors_s1[1], xlab = "x", ylab = "f(x)", main = "Plot of f for different values of s_2")
+
+for (i in 2:length(s_2_values)) {
+  lines(x, f(0.2, mu_1, mu_2, s_2_values[i], s_2, x), col = colors_s1[i])
+}
+legend("topright", legend = paste("s_1 =", s_2_values), col = colors_s1, lty = 1)
+
+#We set from now on
+mu_1=0
+mu_2=1
+s_1=sqrt(3)
+s_2=1
+a=0.2  #modify later maybe
+#######################################Question 4############################################
+
+F<- function(x, a, mu1, mu2, sigma1, sigma2) {
+  F1 <- pnorm(x, mean = mu1, sd = sigma1)  # CDF for the first normal distribution
+  F2 <- pnorm(x, mean = mu2, sd = sigma2)  # CDF for the second normal distribution
+  return(F1 - a * F2)  
+}
+
+x_values <- seq(-10, 10, length.out = 1000)
+cdf_values <- F(x_values, a, mu_1, mu_2, s_1, s_2)
+
+plot(x_values, cdf_values, type = "l", col = "blue", lwd = 2,main = "CDF de la combinaison des deux normales", xlab = "x", ylab = "F(x)")
+
+
+inv_cdf <- function(u, a, mu_1, mu_2, s_1, s_2) {
+  # Recherche dichotomique pour trouver x tel que F(x) = u
+  lower <- -10  # Limite inférieure
+  upper <- 10   # Limite supérieure
+  epsilon <- 1e-6  # Précision
+
+#Initialiser un vecteur pour stocker les résultats
+  x <- numeric(length(u))
+
+  for (i in seq_along(u)) {
+    # Réinitialiser lower et upper pour chaque valeur de u
+    lower <- -10
+    upper <- 10
+
+    while (upper - lower > epsilon) {
+      mid <- (lower + upper) / 2
+      if (F(mid, a, mu_1, mu_2, s_1, s_2) < u[i]) {
+        lower <- mid  # Cherche dans la moitié supérieure
+      } else {
+        upper <- mid  # Cherche dans la moitié inférieure
+      }
+    }
+    x[i] <- (lower + upper) / 2  # Stocker la valeur approchée pour chaque u
+  }
+
+  return(x)  # Retourner le vecteur des valeurs approchées de x
+}
+
+n <- 10000
+u <- runif(n)  # Générer n valeurs uniformes entre 0 et 1
+samples <- sapply(u, inv_cdf, a , mu_1, mu_2, s_1, s_2)
+
+hist(samples, probability = TRUE, breaks = 50, main = "Histogramme des échantillons via inv_cdf", col = "lightgreen")
+
+curve(f(0.2, mu_1, mu_2, s_1, s_2, x), add = TRUE, col = "blue", lwd = 2)
